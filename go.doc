@@ -1,0 +1,3 @@
+package defaults // import "github.com/skeptycal/defaults"
+
+func Example()
