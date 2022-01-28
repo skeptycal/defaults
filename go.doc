@@ -1,3 +1,21 @@
 package defaults // import "github.com/skeptycal/defaults"
 
+var Defaults defaultMap = defaultMap{ ... }
+func DbEcho(args ...interface{}) (n int, err error)
 func Example()
+func IsDebug() bool
+func IsTrace() bool
+func Trace()
+type Any interface{}
+type Booler interface{ ... }
+    func AnyBool(defaultValue Any) Booler
+    func NewBool(defaultValue bool) Booler
+type DbWriter interface{ ... }
+    var DebugWriter DbWriter = NewDebugWriter(dbEchoPrefixBytes, defaultDbWriter)
+    func NewDebugWriter(p []byte, w io.Writer) DbWriter
+type Enabler interface{ ... }
+type GetSetter interface{ ... }
+type IPAddr [4]byte
+type Locker = sync.Locker
+type Printer interface{ ... }
+type Stringer = fmt.Stringer
