@@ -8,8 +8,8 @@ func IsTrace() bool
 func Trace()
 type Any interface{}
 type Booler interface{ ... }
-    func AnyBool(defaultValue Any) Booler
-    func NewBool(defaultValue bool) Booler
+    func AnyBooler(defaultValue Any) Booler
+    func NewBooler(defaultValue bool) Booler
 type DbWriter interface{ ... }
     var DebugWriter DbWriter = NewDebugWriter(dbEchoPrefixBytes, defaultDbWriter)
     func NewDebugWriter(p []byte, w io.Writer) DbWriter

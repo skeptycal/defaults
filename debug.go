@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"strings"
-	"sync"
 	// . "github.com/logrusorgru/aurora"
 )
 
@@ -52,9 +51,9 @@ type (
 	DbWriter interface {
 		io.Writer
 		io.StringWriter
-		sync.Locker
 		Enabler
 		Printer
+		// sync.Locker
 		// GetSetter
 
 		SetWriter(w io.Writer)
@@ -77,7 +76,7 @@ type (
 
 		// mu is a mutual exclusion lock.
 		// The zero value for a Mutex is an unlocked mutex.
-		mu *sync.Mutex
+		// mu *sync.Mutex
 	}
 )
 
@@ -90,19 +89,17 @@ func (w *dbWriter) Disable() {
 }
 
 func (w *dbWriter) SetWriter(writer io.Writer) {
-	defer w.mu.Unlock()
-	w.mu.Lock()
+	// defer w.Unlock()
+	// w.Lock()
 	w.w = writer
 }
 
 func (w *dbWriter) Write(p []byte) (n int, err error) {
-	defer w.mu.Unlock()
-	w.mu.Lock()
 	return w.fn(p)
 }
 
-func (w *dbWriter) Lock()   { w.mu.Lock() }
-func (w *dbWriter) Unlock() { w.mu.Unlock() }
+// func (w *dbWriter) Lock()   { w.mu.Lock() }
+// func (w *dbWriter) Unlock() { w.mu.Unlock() }
 
 func (w *dbWriter) noWrite(b []byte) (n int, err error) {
 	return 0, errDebugInactive

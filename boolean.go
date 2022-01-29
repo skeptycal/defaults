@@ -1,25 +1,45 @@
 package defaults
 
-import "reflect"
+import (
+	"math"
+	"reflect"
+)
 
-// NewBool returns a new boolean value that implements Booler
-func NewBool(defaultValue bool) Booler { return &boolean{defaultValue} }
+// AnyBooler returns a new anyBool value that implements Booler.
+// If the default value is a bool, the returned value will be
+// a NewBooler that is much more efficient than AnyBooler.
+func AnyBooler(defaultValue Any) Booler {
+	switch v := defaultValue.(type) {
+	case bool:
+		return &boolean{v}
+	case Booler:
+		return v
+	default:
+		return &anyBool{v}
+	}
+}
 
-// AnyBool returns a new anyBool value that implements Booler
-func AnyBool(defaultValue Any) Booler { return &anyBool{defaultValue} }
+// NewBooler returns a new boolean value that implements Booler.
+// When the default value is always a bool, this is approx.
+// 1 - 2 orders of magnitude faster than AnyBooler
+func NewBooler(defaultValue bool) Booler { return &boolean{defaultValue} }
 
 // Booler represents a boolean value that implements Enabler
 // and Stringer interfaces.
 type Booler interface {
 	Enabler
 	Stringer
+	AsBool() bool
 }
 
-// boolean represents a boolean value that implements Booler
+// boolean represents a boolean value that implements Booler.
+// It is the bool value only version of anyBool and is
+// approx 1 - 2 orders of magnitude faster than anyBool.
 type boolean struct{ bool }
 
-func (b *boolean) Enable()  { b.bool = true }
-func (b *boolean) Disable() { b.bool = false }
+func (b *boolean) Enable()      { b.bool = true }
+func (b *boolean) Disable()     { b.bool = false }
+func (b *boolean) AsBool() bool { return b.bool }
 func (b *boolean) String() string {
 	if b.bool {
 		return "true"
@@ -31,6 +51,8 @@ func (b *boolean) String() string {
 // to a boolean to implement the Booler interfaces.
 type anyBool struct{ any Any }
 
+// Enable sets the underlying value to "a true value" as compatible
+// with the original type as possible.
 func (b *anyBool) Enable() {
 	switch b.any.(type) {
 	case bool:
@@ -39,6 +61,8 @@ func (b *anyBool) Enable() {
 		b.any = 1
 	case float32, float64:
 		b.any = 1.0
+	case complex64, complex128:
+		b.any = complex(math.Pi, -1)
 	case string:
 		b.any = "true"
 	case []byte:
@@ -48,6 +72,8 @@ func (b *anyBool) Enable() {
 	}
 }
 
+// Disable sets the underlying value to "a false value" as compatible
+// with the original type as possible.
 func (b *anyBool) Disable() {
 	switch b.any.(type) {
 	case bool:
@@ -56,63 +82,25 @@ func (b *anyBool) Disable() {
 		b.any = 0
 	case float32, float64:
 		b.any = 0.0
+	case complex64, complex128:
+		b.any = complex(0, 0)
 	case string:
-		b.any = "false"
+		b.any = ""
 	case []byte:
-		b.any = []byte("false")
+		b.any = []byte{}
 	default:
 		b.any = nil
 	}
 }
 
-func boolString(b bool) string {
-	if b {
+func (b *anyBool) String() (s string) {
+	if b.AsBool() {
 		return "true"
 	}
 	return "false"
 }
 
-/*
-// A Kind represents the specific kind of type that a Type represents.
-// The zero Kind is not a valid kind.
-type Kind uint
-
-const (
-	Invalid Kind = iota
-	Bool
-	Int
-	Int8
-	Int16
-	Int32
-	Int64
-	Uint
-	Uint8
-	Uint16
-	Uint32
-	Uint64
-	Uintptr
-	Float32
-	Float64
-	Complex64
-	Complex128
-	Array
-	Chan
-	Func
-	Interface
-	Map
-	Ptr
-	Slice
-	String
-	Struct
-	UnsafePointer
-)
-*/
-
-func (b *anyBool) String() (s string) {
-	return boolString(b.Bool())
-}
-
-func (b *anyBool) Bool() bool {
+func (b *anyBool) AsBool() bool {
 	if b.any == nil {
 		return false
 	}
@@ -120,11 +108,20 @@ func (b *anyBool) Bool() bool {
 	v := reflect.ValueOf(b.any)
 	k := v.Kind()
 
-	if k == reflect.UnsafePointer {
+	if k == reflect.Invalid {
 		return false
 	}
 
-	if k == reflect.Invalid {
+	if k == reflect.Ptr {
+		return !v.IsNil()
+
+	}
+
+	if k == reflect.Bool {
+		return v.Bool()
+	}
+
+	if k == reflect.UnsafePointer {
 		return false
 	}
 
@@ -132,14 +129,19 @@ func (b *anyBool) Bool() bool {
 		return false
 	}
 
-	if k == reflect.Bool {
-		return v.Bool()
+	if k == reflect.String {
+		if s := b.any.(string); s == "" || s == "false" || s == "0" || s == "False" || s == "no" {
+			return false
+		}
+		return true
 	}
 
+	// Kinds 2 - 6 are ints
 	if k > 1 && k < 7 {
 		return v.Int() != 0
 	}
 
+	// Kinds 7 - 11 are uints
 	if k > 6 && k < 12 {
 		return v.Uint() != 0
 	}
@@ -156,7 +158,7 @@ func (b *anyBool) Bool() bool {
 		return v.Len() != 0
 	}
 
-	if k == reflect.Ptr || k == reflect.Interface || k == reflect.Func {
+	if k == reflect.Func {
 		return !v.IsNil()
 	}
 
