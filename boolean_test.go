@@ -67,14 +67,72 @@ BenchmarkBooler/true_pointer_(not_nil)-8 	76069932	        15.24 ns/op	       0 
 BenchmarkBooler/false_pointer_(not_nil)-8   81939463	        15.67 ns/op	       0 B/op	       0 allocs/op
 */
 
+/* Benchmark results for AsBool(), the function that returns the boolean value
+and likely the most common use case. e.g.
+
+ if AnyBooler(struct{some_stuff}) {
+	// do stuff if true ...
+ }
+
+AnyBool(true)-8		   		  459922761		   		      2.588 ns/op
+AnyBool(false)-8		   	  403378915		   		      3.181 ns/op
+nil-8		   		      	  341665299		   		      4.176 ns/op
+nil_pointer-8		   		  194859840		   		      6.159 ns/op
+false_pointer_(not_nil)-8	  194509022		   		      6.159 ns/op
+true_pointer_(not_nil)-8	  192762529		   		      6.167 ns/op
+uint8_0-8		   		      121829476		   		      9.819 ns/op
+int8_0-8		   		      122175487		   		      9.833 ns/op
+uint_0-8		   		      121726291		   		      9.835 ns/op
+float64_0.0-8		   		  121863541		   		      9.853 ns/op
+float_0.0-8		   		      121720087		   		      9.860 ns/op
+float32_0.0-8		   		  121386322		   		      9.888 ns/op
+int_0-8		   		      	  100000000		   		      10.00 ns/op
+int64_0-8		   		      100000000		   		      10.14 ns/op
+int32_0-8		   		      100000000		   		      10.21 ns/op
+uint64_0-8		   		      121869430		   		      10.57 ns/op
+uint16_0-8		   		      121591849		   		      11.11 ns/op
+uint32_0-8		   		      121507041		   		      11.26 ns/op
+int16_0-8		   		      100000000		   		      11.43 ns/op
+int8_42-8		   		      100000000		   		      11.54 ns/op
+int16_42-8		   		      100000000		   		      11.55 ns/op
+int_42-8		   		      100000000		   		      11.59 ns/op
+int32_42-8		   		      100000000		   		      11.93 ns/op
+uint_42-8		   		      100000000		   		      11.96 ns/op
+uint32_42-8		   		       99113143		   		      12.00 ns/op
+uint64_42-8		   		       99979520		   		      12.04 ns/op
+float32_42.0-8		   	       99430346		   		      12.05 ns/op
+uint16_42-8		   		       97423687		   		      12.07 ns/op
+uint8_42-8		   		      100000000		   		      12.12 ns/op
+empty_struct_(thing{})-8	   99363106		   		      12.15 ns/op
+int64_42-8		   		       97503504		   		      12.27 ns/op
+float_42.0-8		   		   96379418		   		      12.44 ns/op
+float64_42.0-8		   		   96647210		   		      12.62 ns/op
+the_empty_string-8		   	   95115426		   		      12.66 ns/op
+true_string-8		   		   82432443		   		      14.55 ns/op
+'0'-8		   		      	   81981682		   		      14.65 ns/op
+'false'-8		   		       81403990		   		      14.72 ns/op
+empty_[]byte-8		   		   73341975		   		      16.39 ns/op
+non-empty_[]byte-8		   	   72976795		   		      16.40 ns/op
+slice-8		   		      	   73297732		   		      16.40 ns/op
+empty_slice-8		   		   73147689		   		      16.43 ns/op
+empty_map-8		   		       68188597		   		      17.60 ns/op
+map[string]string-8		   	   68090418		   		      17.63 ns/op
+map[int]byte-8		   		   67848358		   		      17.71 ns/op
+empty_chan-8		   		   67375986		   		      17.84 ns/op
+false_struct-8		   		   48710113		   		      24.76 ns/op
+array-8		   		      	   47698861		   		      25.29 ns/op
+true_struct-8		   		   45950602		   		      26.55 ns/op
+empty_array-8		   		   22106232		   		      54.34 ns/op
+*/
+
 var true_bool bool = true
 var truePtr *bool = &true_bool
 
 var false_bool bool = false
 var falsePtr *bool = &false_bool
-
 var nilPtr *uintptr = nil
-var retval = ""
+
+var retval Any = ""
 
 var boolerTests = []struct {
 	name  string
@@ -168,6 +226,16 @@ func BenchmarkBooler(b *testing.B) {
 	}
 }
 
+func BenchmarkBoolerAsBool(b *testing.B) {
+	for _, bb := range boolerTests {
+		b.Run(bb.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				retval = bb.input.AsBool()
+			}
+		})
+	}
+}
+
 func Test_boolean_Enable(t *testing.T) {
 	want := "true"
 	for _, tt := range newBoolTests {
@@ -198,11 +266,6 @@ func TestAnyBool(t *testing.T) {
 	for _, tt := range boolerTests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.input.String(); got != tt.want {
-				// v := reflect.ValueOf(tt.input)
-				// ty := v.Type()
-				// k := v.Kind()
-				// s := ty.String()
-				// t.Errorf("NewBool(%v, %v, %v, %v) = %v, want %v", tt.name, v, k, s, got, tt.want)
 				t.Errorf("NewBool(%v) = %v, want %v", tt.name, got, tt.want)
 			}
 		})
@@ -253,5 +316,80 @@ func TestIPAddr_String(t *testing.T) {
 				t.Errorf("IPAddr.String() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func Test_boolean_AsBool(t *testing.T) {
+	type fields struct {
+		bool bool
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b := &boolean{
+				bool: tt.fields.bool,
+			}
+			if got := b.AsBool(); got != tt.want {
+				t.Errorf("boolean.AsBool() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestIsTrue(t *testing.T) {
+	tests := []struct {
+		name string
+		v    Any
+		want bool
+	}{
+		{"0", 0, false},
+		{"42", 42, true},
+		{`"true"`, true, true},
+		{`"false"`, false, false},
+		{`[]byte{}`, []byte{}, false},
+		{`[]byte("42")`, []byte("42"), true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsTrue(tt.v); got != tt.want {
+				t.Errorf("IsTrue(%v) = %v, want %v", tt.name, got, tt.want)
+			}
+		})
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsFalse(tt.v); got != !tt.want {
+				t.Errorf("IsFalse(%v) = %v, want %v", tt.name, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNewBooler(t *testing.T) {
+	want := true
+	got := NewBooler(true)
+	if got.AsBool() != want {
+		t.Errorf("NewBooler(true) = %v, want %v", got, want)
+	}
+
+	want = false
+	got.Disable()
+	if got.AsBool() != want {
+		t.Errorf("NewBooler(true) = %v, want %v", got, want)
+	}
+
+	got = NewBooler(false)
+	if got.AsBool() != want {
+		t.Errorf("NewBooler(true) = %v, want %v", got, want)
+	}
+
+	want = true
+	got.Enable()
+	if got.AsBool() != want {
+		t.Errorf("NewBooler(true) = %v, want %v", got, want)
 	}
 }

@@ -116,14 +116,14 @@ func (w *dbWriter) WriteString(s string) (n int, err error) {
 }
 
 func (w *dbWriter) Print(args ...interface{}) (n int, err error) {
-	if Defaults.Debug {
+	if v, err := Defaults.Get("debugState"); err != nil && v.(Booler).AsBool() == true {
 		return w.sprintf(args...)
 	}
 	return 0, errDebugInactive
 }
 
 func (w *dbWriter) Println(args ...interface{}) (n int, err error) {
-	if Defaults.Debug {
+	if v, err := Defaults.Get("debugState"); err != nil && v.(Booler).AsBool() == true {
 		return w.println(args...)
 	}
 	return 0, errDebugInactive
@@ -136,7 +136,7 @@ func (w *dbWriter) println(args ...interface{}) (n int, err error) {
 }
 
 func (w *dbWriter) Printf(format string, args ...interface{}) (n int, err error) {
-	if Defaults.Debug {
+	if v, err := Defaults.Get("debugState"); err != nil && v.(Booler).AsBool() == true {
 		return w.Print(fmt.Sprintf(format, args...))
 	}
 	return 0, errDebugInactive
