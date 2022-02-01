@@ -5,6 +5,12 @@ import (
 	"sync"
 )
 
+const (
+	NL    = "\n"
+	TAB   = "\t"
+	SPACE = " "
+)
+
 type (
 
 	// thing is an empty stuct used for preallocating zero resource objects

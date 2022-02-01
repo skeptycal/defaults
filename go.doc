@@ -1,5 +1,6 @@
 package defaults // import "github.com/skeptycal/defaults"
 
+const NL = "\n" ...
 func CheckType(any Any, typ string) bool
 func DbEcho(args ...interface{}) (n int, err error)
 func Example()

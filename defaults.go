@@ -73,7 +73,7 @@ func (d defaultMap) String() string {
 	sb := &strings.Builder{}
 	defer sb.Reset()
 
-	fmt.Fprintln(sb, "Default Settings Map:")
+	fmt.Fprint(sb, "Default Settings Map:\n")
 	fmt.Fprintf(sb, format, "Key", "Value")
 
 	for key, value := range d {
