@@ -12,9 +12,6 @@ func GetType(any Any) string {
 	return reflect.ValueOf(any).Type().String()
 }
 
-func IsTrue(v Any) bool  { return AnyBooler(v).AsBool() }
-func IsFalse(v Any) bool { return !AnyBooler(v).AsBool() }
-
 func remove(slice []int, i int) []int {
 	copy(slice[i:], slice[i+1:])
 	return slice[:len(slice)-1]

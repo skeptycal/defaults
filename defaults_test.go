@@ -2,7 +2,6 @@ package defaults
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 )
 
@@ -86,25 +85,4 @@ func ExampleDefaultMapper_String() {
 		debugState           = true
 		traceState           = true
 	*/
-}
-
-func TestNewSetting(t *testing.T) {
-	type args struct {
-		key   string
-		value Any
-	}
-	tests := []struct {
-		name string
-		args args
-		want Setting
-	}{
-		{"filename", args{"filename", "testfile"}, &anyBool{}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := NewSetting(tt.args.key, tt.args.value); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewSetting() = %v, want %v", got, tt.want)
-			}
-		})
-	}
 }

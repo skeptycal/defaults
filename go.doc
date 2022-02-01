@@ -1,6 +1,7 @@
 package defaults // import "github.com/skeptycal/defaults"
 
-const NL = "\n" ...
+const NL = types.NL ...
+var AnyBooler = anybool.AnyBooler
 func AssertEquals(t *testing.T, testname string, argname string, want Any, got Any, wantErr bool)
 func AssertNotEqual(t *testing.T, testname string, argname string, want Any, got Any, wantErr bool)
 func AssertStringEquals(t *testing.T, testname string, argname string, want Any, got Any, wantErr bool)
@@ -10,29 +11,25 @@ func DbEcho(args ...interface{}) (n int, err error)
 func Example()
 func GetKind(any Any) string
 func GetType(any Any) string
-func IsFalse(v Any) bool
 func IsString(arg Any) error
-func IsTrue(v Any) bool
 func Trace()
-type Any interface{}
-type Booler interface{ ... }
-    func AnyBooler(defaultValue Any) Booler
-    func NewBooler(v bool) Booler
+type Any = types.Any
+type Booler = anybool.Booler
 type DbWriter interface{ ... }
     var DebugWriter DbWriter = NewDebugWriter(dbEchoPrefixBytes, defaultDbWriter)
     func NewDebugWriter(p []byte, w io.Writer) DbWriter
 type DefaultMapper interface{ ... }
     var Defaults DefaultMapper = NewDefaults(defaultDebugState, defaultTraceState)
     func NewDefaults(debugState, traceState bool) DefaultMapper
-type Enabler interface{ ... }
-type Formatter interface{ ... }
-type GetSetter interface{ ... }
+type Enabler = types.Enabler
+type Formatter = fmt.Formatter
+type GetSetter = types.GetSetter
 type IPAddr [4]byte
-type Locker interface{ ... }
-type Printer interface{ ... }
+type Locker = sync.Locker
+type Printer = types.Printer
 type Setting interface{ ... }
     func NewSetting(key string, value Any) Setting
-type State interface{ ... }
-type StringWriter interface{ ... }
-type Stringer interface{ ... }
-type Writer interface{ ... }
+type State = fmt.State
+type StringWriter = io.StringWriter
+type Stringer = fmt.Stringer
+type Writer = io.Writer
