@@ -3,7 +3,6 @@ package defaults
 import (
 	"errors"
 	"fmt"
-	"reflect"
 	"strings"
 )
 
@@ -12,59 +11,62 @@ const (
 	defaultTraceState = true
 )
 
-var Defaults DefaultMapper = NewDefaults()
+// Defaults provides a global set of defaults.
+var Defaults DefaultMapper = NewDefaults(defaultDebugState, defaultTraceState)
 
-type Setting interface {
-	Booler
+func NewDefaults(debugState, traceState bool) DefaultMapper {
+	m := defaultMap{
+		m:          make(map[string]Setting, 2),
+		debugState: debugState,
+		traceState: traceState,
+	}
+	m.Set("debugState", debugState)
+	m.Set("traceState", traceState)
+	return &m
 }
 
-func NewSetting(key string, value Any) Setting { return AnyBooler(value) }
-
 type (
-	defaultMap map[string]Setting
+	// defaultMap is the main storage for a DefaultMapper
+	defaultMap struct {
+		debugState bool
+		traceState bool
+		m          map[string]Setting
+	}
 
+	// DefaultMapper contains the defaults and settings for
+	// an application. It has several defaults set ...
+	// by default and any number of settings of any type
+	// can be stored and retrieved.
 	DefaultMapper interface {
 		GetSetter
 		Stringer
+		IsDebug() bool
+		IsTrace() bool
 	}
 )
 
 func (d defaultMap) Set(key Any, value Any) error {
 	switch v := key.(type) {
 	case string:
-		d[v] = AnyBooler(value)
+		d.m[v] = NewSetting(v, value)
 		return nil
 	default:
-		return fmt.Errorf("key type not string")
+		return fmt.Errorf("key type not string: %v", GetType(key))
 	}
 }
 
 func (d defaultMap) Get(key Any) (Any, error) {
-	if CheckType(key, "string") {
-		return nil, fmt.Errorf("key type not string")
-	}
+
 	switch v := key.(type) {
 	case string:
-		if v, ok := d[v]; ok {
+		if v, ok := d.m[v]; ok {
 			return v, nil
 		}
 		return nil, errors.New("key not found: " + v)
-		// d[v] = AnyBooler(value)
-		// return nil
 	default:
-		return nil, fmt.Errorf("key type not string")
+		return nil, fmt.Errorf("key type not string: %v", GetType(key))
+
 	}
-
-}
-
-func GetKind(any Any) string             { return reflect.ValueOf(any).Kind().String() }
-func CheckType(any Any, typ string) bool { return GetType(any) == typ }
-
-func GetType(any Any) string {
-	if any == nil {
-		return "nil"
-	}
-	return reflect.ValueOf(any).Type().String()
 }
 
 func (d defaultMap) String() string {
@@ -76,27 +78,12 @@ func (d defaultMap) String() string {
 	fmt.Fprint(sb, "Default Settings Map:\n")
 	fmt.Fprintf(sb, format, "Key", "Value")
 
-	for key, value := range d {
+	for key, value := range d.m {
 		fmt.Fprintf(sb, format, key, value)
 	}
 
 	return sb.String()
 }
 
-func (d defaultMap) IsDebug() bool { return d["debugState"].AsBool() }
-func (d defaultMap) IsTrace() bool { return d["traceState"].AsBool() }
-
-func NewDefaults() DefaultMapper {
-	m := make(defaultMap, 2)
-	m.Set("debugState", defaultDebugState)
-	m.Set("traceState", defaultTraceState)
-	return &m
-}
-
-func IsTrue(v Any) bool  { return AnyBooler(v).AsBool() }
-func IsFalse(v Any) bool { return !AnyBooler(v).AsBool() }
-
-func remove(slice []int, i int) []int {
-	copy(slice[i:], slice[i+1:])
-	return slice[:len(slice)-1]
-}
+func (d defaultMap) IsDebug() bool { return d.m["debugState"].AsBool() }
+func (d defaultMap) IsTrace() bool { return d.m["traceState"].AsBool() }

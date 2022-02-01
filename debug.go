@@ -53,8 +53,6 @@ type (
 		io.StringWriter
 		Enabler
 		Printer
-		// sync.Locker
-		// GetSetter
 
 		SetWriter(w io.Writer)
 	}
@@ -73,10 +71,6 @@ type (
 
 		// w is the io.Writer used for debug output
 		w io.Writer
-
-		// mu is a mutual exclusion lock.
-		// The zero value for a Mutex is an unlocked mutex.
-		// mu *sync.Mutex
 	}
 )
 
@@ -89,17 +83,12 @@ func (w *dbWriter) Disable() {
 }
 
 func (w *dbWriter) SetWriter(writer io.Writer) {
-	// defer w.Unlock()
-	// w.Lock()
 	w.w = writer
 }
 
 func (w *dbWriter) Write(p []byte) (n int, err error) {
 	return w.fn(p)
 }
-
-// func (w *dbWriter) Lock()   { w.mu.Lock() }
-// func (w *dbWriter) Unlock() { w.mu.Unlock() }
 
 func (w *dbWriter) noWrite(b []byte) (n int, err error) {
 	return 0, errDebugInactive
@@ -116,28 +105,22 @@ func (w *dbWriter) WriteString(s string) (n int, err error) {
 }
 
 func (w *dbWriter) Print(args ...interface{}) (n int, err error) {
-	if v, err := Defaults.Get("debugState"); err != nil && v.(Booler).AsBool() == true {
-		return w.sprintf(args...)
+	if Defaults.IsDebug() {
+		return fmt.Fprint(w.w, args...)
 	}
 	return 0, errDebugInactive
 }
 
 func (w *dbWriter) Println(args ...interface{}) (n int, err error) {
-	if v, err := Defaults.Get("debugState"); err != nil && v.(Booler).AsBool() == true {
-		return w.println(args...)
+	if Defaults.IsDebug() {
+		return fmt.Fprintln(w.w, args...)
 	}
 	return 0, errDebugInactive
 }
 
-func (w *dbWriter) println(args ...interface{}) (n int, err error) {
-	n, err = w.Print(args...)
-	w.WriteString("\n")
-	return n + 1, err
-}
-
 func (w *dbWriter) Printf(format string, args ...interface{}) (n int, err error) {
-	if v, err := Defaults.Get("debugState"); err != nil && v.(Booler).AsBool() == true {
-		return w.Print(fmt.Sprintf(format, args...))
+	if Defaults.IsDebug() {
+		return fmt.Fprintf(w.w, format, args...)
 	}
 	return 0, errDebugInactive
 }
@@ -173,4 +156,10 @@ func (w *dbWriter) sprintf(args ...interface{}) (n int, err error) {
 	n, err = w.WriteString(fmt.Sprint(args...))
 	w.Write(resetBytes)
 	return
+}
+
+func (w *dbWriter) println(args ...interface{}) (n int, err error) {
+	n, err = w.Print(args...)
+	w.WriteString("\n")
+	return n + 1, err
 }

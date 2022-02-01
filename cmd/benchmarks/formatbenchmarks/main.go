@@ -5,12 +5,16 @@ import (
 	"log"
 	"os"
 	"unicode"
+
+	"github.com/skeptycal/defaults"
 )
 
 const (
 	defaultInputFilename = "in.txt"
 	NL                   = "\n"
 )
+
+var Defaults = defaults.Defaults
 
 type TextFile interface {
 	ReadFile() error

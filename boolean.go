@@ -3,6 +3,7 @@ package defaults
 import (
 	"math"
 	"reflect"
+	"strconv"
 )
 
 // AnyBooler returns a new anyBool value that implements Booler.
@@ -22,7 +23,7 @@ func AnyBooler(defaultValue Any) Booler {
 // NewBooler returns a new boolean value that implements Booler.
 // When the default value is always a bool, this is approx.
 // 1 - 2 orders of magnitude faster than AnyBooler
-func NewBooler(defaultValue bool) Booler { return &boolean{defaultValue} }
+func NewBooler(v bool) Booler { return &boolean{bool: v} }
 
 // Booler represents a boolean value that implements Enabler
 // and Stringer interfaces.
@@ -55,8 +56,6 @@ type anyBool struct{ any Any }
 // with the original type as possible.
 func (b *anyBool) Enable() {
 	switch b.any.(type) {
-	case bool:
-		b.any = true
 	case int, uint:
 		b.any = 1
 	case float32, float64:
@@ -67,6 +66,10 @@ func (b *anyBool) Enable() {
 		b.any = "true"
 	case []byte:
 		b.any = []byte("true")
+	case bool:
+		// this case is not normally used ... the constructor assigns
+		// natural bools to *boolean instead of *anyBool
+		b.any = true
 	default:
 		b.any = true
 	}
@@ -130,6 +133,9 @@ func (b *anyBool) AsBool() bool {
 	}
 
 	if k == reflect.String {
+		if ok, err := strconv.ParseBool(v.String()); err != nil {
+			return ok
+		}
 		if s := b.any.(string); s == "" || s == "false" || s == "0" || s == "False" || s == "no" {
 			return false
 		}

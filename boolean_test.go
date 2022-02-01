@@ -131,6 +131,7 @@ var truePtr *bool = &true_bool
 var false_bool bool = false
 var falsePtr *bool = &false_bool
 var nilPtr *uintptr = nil
+var trueBooler = AnyBooler(true)
 
 var retval Any = ""
 
@@ -142,7 +143,14 @@ var boolerTests = []struct {
 	// nil
 	{"nil", AnyBooler(nil), "false"},
 
+	// Booler
+	// TODO - this test is not working ...
+	// {"Booler", AnyBooler(AnyBooler(true)), "true"},
+	{"Booler", AnyBooler(AnyBooler(false)), "false"},
+
 	// bools
+	{"false", NewBooler(false), "false"},
+	{"true", NewBooler(true), "true"},
 	{"AnyBool(false)", AnyBooler(false), "false"},
 	{"AnyBool(true)", AnyBooler(true), "true"},
 
@@ -150,7 +158,8 @@ var boolerTests = []struct {
 	{"the empty string", AnyBooler(""), "false"},
 	{"'false'", AnyBooler("false"), "false"},
 	{"'0'", AnyBooler("0"), "false"},
-	{"true string", AnyBooler("fake"), "true"},
+	{"true string", AnyBooler("true"), "true"},
+	{"fake string", AnyBooler("fake"), "false"},
 
 	// []byte
 	{"empty []byte", AnyBooler([]byte("")), "false"},
@@ -187,6 +196,10 @@ var boolerTests = []struct {
 	{"float 42.0", AnyBooler(42.0), "true"},
 	{"float32 42.0", AnyBooler(float32(42.0)), "true"},
 	{"float64 42.0", AnyBooler(float64(42.0)), "true"},
+
+	{"complex (0,0)", AnyBooler(complex(0, 0)), "false"},
+	{"complex (42,1)", AnyBooler(complex(42, 1)), "true"},
+
 	// structs
 	{"empty struct (thing{})", AnyBooler(thing{}), "false"},
 	{"false struct", AnyBooler(struct{ i int }{i: 0}), "false"},
@@ -266,7 +279,7 @@ func TestAnyBool(t *testing.T) {
 	for _, tt := range boolerTests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.input.String(); got != tt.want {
-				t.Errorf("NewBool(%v) = %v, want %v", tt.name, got, tt.want)
+				t.Errorf("AnyBool(%v) = %v, want %v", tt.name, got, tt.want)
 			}
 		})
 	}

@@ -1,8 +1,8 @@
 package defaults
 
 import (
-	"errors"
 	"fmt"
+	"reflect"
 	"testing"
 )
 
@@ -27,68 +27,58 @@ func TestCheckType(t *testing.T) {
 		{"[]uint8", []byte("fake"), "[]uint8", "slice", true},
 	}
 	for _, tt := range tests {
-		AssertEquals(t, "CheckType", tt.name+", "+tt.typ, tt.want, CheckType(tt.input, tt.typ))
-		AssertEquals(t, "GetType", tt.name, tt.typ, GetType(tt.input))
-		AssertEquals(t, "GetKind", tt.name, tt.knd, GetKind(tt.input))
+		AssertEquals(t, "CheckType", tt.name+", "+tt.typ, tt.want, CheckType(tt.input, tt.typ), false)
+		AssertEquals(t, "GetType", tt.name, tt.typ, GetType(tt.input), false)
+		AssertEquals(t, "GetKind", tt.name, tt.knd, GetKind(tt.input), false)
 	}
 }
 
-func AssertEquals(t *testing.T, testname string, argname string, want Any, got Any) {
-	name := testname + "(" + argname + ")"
-	t.Run(name, func(t *testing.T) {
-		if got != want {
-			t.Errorf("%v = %v, want %v", name, got, want)
-		}
-	})
-}
-
-func AssertTypeEquals(arg Any, typ string) error {
-	if a := GetType(arg); a != typ {
-		return errors.New(fmt.Sprintf("incorrect type: %v want %v", a, typ))
-	}
-	return nil
-}
-
-func IsString(arg Any) error {
-	return AssertTypeEquals(arg, "string")
-}
-
-func AssertStringEquals(t *testing.T, testname string, argname string, want Any, got Any) {
-
-	if err := IsString(want); err != nil {
-		t.Errorf("%v(%v): %v", testname, argname, err)
-		t.FailNow()
-	}
-
-	if err := IsString(got); err != nil {
-		t.Errorf("%v(%v): %v", testname, argname, err)
-		t.FailNow()
-	}
-
-	w := want.(string)
-	g := got.(string)
-
-	length := len(w)
-	if len(g) < len(w) {
-		length = len(g)
-	}
-
-	for i := 0; i < length; i++ {
-		if w[i] != g[i] {
-			t.Errorf("%v(%v): first string mismatch at position %d - want: %q  got: %q", testname, argname, i, w[i], g[i])
-			break
-		}
-	}
-}
-
-func TestDefaultMapString(t *testing.T) {
+func TestDefaultMapper(t *testing.T) {
 	const defaultsStringSample = "Default Settings Map:\nKey                  = Value\ndebugState           = true\ntraceState           = true\n"
-	var b = []byte{68, 101, 102, 97, 117, 108, 116, 32, 83, 101, 116, 116, 105, 110, 103, 115, 32, 77, 97, 112, 58, 10, 75, 101, 121, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 61, 32, 86, 97, 108, 117, 101, 10, 100, 101, 98, 117, 103, 83, 116, 97, 116, 101, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 61, 32, 116, 114, 117, 101, 10, 116, 114, 97, 99, 101, 83, 116, 97, 116, 101, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 61, 32, 116, 114, 117, 101, 10}
 
-	AssertEquals(t, "Defaults_String", "", string(b)[:49], Defaults.String()[:49])
+	// TODO: something about the string formatting is messing up this test, so
+	// just testing the first 49 characters
+	AssertEquals(t, "Defaults_String", "", defaultsStringSample[:49], Defaults.String()[:49], false)
+
+	AssertEquals(t, "DefaultMapper.IsDebug", "", defaultDebugState, Defaults.IsDebug(), false)
+	AssertNotEqual(t, "DefaultMapper.IsDebug", "", defaultDebugState, Defaults.IsDebug(), true)
+	AssertEquals(t, "DefaultMapper.IsTrace", "", defaultTraceState, Defaults.IsTrace(), false)
+
+	got, err := Defaults.Get("debugState")
+	if err != nil {
+		t.Fatal(err)
+	}
+	AssertEquals(t, "DefaultMapper.Get", "debugState", defaultDebugState, got.(Setting).AsBool(), false)
+
+	err = Defaults.Set("debugState", !defaultDebugState)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err = Defaults.Get("debugState")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	AssertEquals(t, "DefaultMapper.Set", "debugState", !defaultDebugState, got.(Setting).AsBool(), false)
+
+	err = Defaults.Set(42, 42)
+	if err == nil {
+		t.Errorf("expected error, got %q", err)
+	}
+
+	_, err = Defaults.Get(42)
+	if err == nil {
+		t.Errorf("expected error, got %q", err)
+	}
+
+	_, err = Defaults.Get("fake_key_that_does_not_exist")
+	if err == nil {
+		t.Errorf("expected error, got %q", err)
+	}
+
 }
 
-func ExampleDefaultsString() {
+func ExampleDefaultMapper_String() {
 	fmt.Println(Defaults.String())
 	/*
 				Default Settings Map:
@@ -96,4 +86,25 @@ func ExampleDefaultsString() {
 		debugState           = true
 		traceState           = true
 	*/
+}
+
+func TestNewSetting(t *testing.T) {
+	type args struct {
+		key   string
+		value Any
+	}
+	tests := []struct {
+		name string
+		args args
+		want Setting
+	}{
+		{"filename", args{"filename", "testfile"}, &anyBool{}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := NewSetting(tt.args.key, tt.args.value); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewSetting() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
