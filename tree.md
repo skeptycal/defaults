@@ -24,22 +24,16 @@
 ├── README.md
 ├── SECURITY.md
 ├── ansi.go
-├── boolean.go
-├── boolean_test.go
 ├── cmd
 │   ├── benchmarks
 │   │   └── formatbenchmarks
 │   │       ├── main.go
 │   │       └── main_test.go
 │   └── example
-│       ├── anybool
-│       │   └── main.go
 │       ├── color_example
 │       │   └── main.go
 │       └── defaults
 │           └── main.go
-├── cnbcquote.css
-├── cnbcqutoe.html
 ├── contributing.md
 ├── coverage.txt
 ├── debug.go
@@ -58,11 +52,12 @@
 ├── go.sum
 ├── go.test.sh
 ├── idea.md
-├── interfaces.go
+├── internal.go
 ├── make_tree_md.sh
 ├── profile1643649876N.out
 ├── profile1643651589N.out
 ├── profile1643674103N.out
+├── profile1643731232N.out
 ├── settings.go
 ├── test_utils.go
 ├── test_utils_test.go
@@ -71,7 +66,7 @@
 ├── types.go
 └── utils.go
 
-11 directories, 53 files
+10 directories, 49 files
 ```
 
 [get_tree]: (http://mama.indstate.edu/users/ice/tree/)
