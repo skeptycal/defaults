@@ -54,19 +54,17 @@
 ├── idea.md
 ├── internal.go
 ├── make_tree_md.sh
-├── profile1643649876N.out
-├── profile1643651589N.out
-├── profile1643674103N.out
-├── profile1643731232N.out
 ├── settings.go
 ├── test_utils.go
 ├── test_utils_test.go
 ├── trace.go
 ├── tree.md
 ├── types.go
-└── utils.go
+├── types_test.go
+├── utils.go
+└── utils_test.go
 
-10 directories, 49 files
+10 directories, 47 files
 ```
 
 [get_tree]: (http://mama.indstate.edu/users/ice/tree/)
